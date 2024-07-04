@@ -1,0 +1,13 @@
+name: Test Cron
+
+on:
+  schedule:
+    - cron: '*/1 * * * *'
+
+jobs:
+  test-cron:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print current time
+        run: date
