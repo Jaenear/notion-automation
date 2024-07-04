@@ -3,6 +3,7 @@ name: Run Notion Script
 on:
   schedule:
     - cron: '*/30 * * * *'  # 매 30분마다 실행
+  workflow_dispatch:  # 수동 실행을 위해 추가
 
 jobs:
   run-script:
@@ -13,7 +14,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
