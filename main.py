@@ -2,8 +2,8 @@ import requests
 import json
 from datetime import datetime, date
 
-NOTION_API_KEY = 'secret_DAgF0ADh9gD3xVmtdJp25LZa070ejmXKDSOEqHQGcWj'
-DATABASE_ID = '259c5548a62b4288871b96c4ed61ab03'
+NOTION_API_KEY = 'your_secret_api_key'
+DATABASE_ID = 'your_database_id'
 HEADER = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
     "Content-Type": "application/json",
