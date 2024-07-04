@@ -2,7 +2,7 @@ name: Run Notion Script
 
 on:
   schedule:
-    - cron: '*/6 * * * *'  # 매 1분마다 실행
+    - cron: '*/6 * * * *'  # 매 5분마다 실행
   workflow_dispatch:  # 수동 실행을 위해 추가
 
 jobs:
@@ -26,3 +26,4 @@ jobs:
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           DATABASE_ID: ${{ secrets.DATABASE_ID }}
+          NEW_DATABASE_ID: ${{ secrets.NEW_DATABASE_ID }}
