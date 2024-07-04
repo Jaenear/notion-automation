@@ -1,9 +1,10 @@
 import requests
 import json
-from datetime import datetime, date
+from datetime import date
+import os
 
-NOTION_API_KEY = 'your_secret_api_key'
-DATABASE_ID = 'your_database_id'
+NOTION_API_KEY = os.getenv('NOTION_API_KEY')
+DATABASE_ID = os.getenv('DATABASE_ID')
 HEADER = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
     "Content-Type": "application/json",
