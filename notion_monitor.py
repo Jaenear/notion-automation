@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 # 로그 설정
@@ -26,10 +26,10 @@ def fetch_database():
 # 변경 사항 확인하기
 def check_for_changes(last_check_timestamp, database):
     changes = []
-    last_check_dt = datetime.fromisoformat(last_check_timestamp)
+    last_check_dt = datetime.fromisoformat(last_check_timestamp).replace(tzinfo=timezone.utc)
     for item in database['results']:
         last_edited_time = item['last_edited_time']
-        last_edited_dt = datetime.fromisoformat(last_edited_time[:-1])
+        last_edited_dt = datetime.fromisoformat(last_edited_time[:-1]).replace(tzinfo=timezone.utc)
         if last_edited_dt > last_check_dt:
             changes.append(item)
     return changes
@@ -80,6 +80,6 @@ if changes:
     send_slack_message(message)
 
 # 마지막 확인 시간 업데이트
-current_time = datetime.utcnow().isoformat() + "Z"
+current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 save_last_check_time(current_time)
 logging.info(f"Updated last check time to: {current_time}")
