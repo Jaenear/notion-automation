@@ -27,9 +27,11 @@ def fetch_database():
 def check_for_changes(last_check_timestamp, database):
     changes = []
     last_check_dt = datetime.fromisoformat(last_check_timestamp).replace(tzinfo=timezone.utc)
+    logging.info(f"Checking for changes since: {last_check_dt}")
     for item in database['results']:
         last_edited_time = item['last_edited_time']
         last_edited_dt = datetime.fromisoformat(last_edited_time[:-1]).replace(tzinfo=timezone.utc)
+        logging.info(f"Item last edited time: {last_edited_dt}")
         if last_edited_dt > last_check_dt:
             changes.append(item)
     return changes
