@@ -1,8 +1,6 @@
-# notion_monitor.py
-
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 # 환경 변수에서 설정 값들 가져오기
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
@@ -26,7 +24,7 @@ def fetch_database():
 def check_for_changes(last_check_timestamp, database):
     changes = []
     for item in database['results']:
-        last_edited_time = item['last_edited_time']
+        last_edited_time = datetime.fromisoformat(item['last_edited_time'].replace('Z', '+00:00'))
         if last_edited_time > last_check_timestamp:
             changes.append(item)
     return changes
@@ -53,25 +51,27 @@ def send_slack_message(message):
 def load_last_check_time():
     try:
         with open("last_check_time.txt", "r") as file:
-            return file.read().strip()
+            return datetime.fromisoformat(file.read().strip())
     except FileNotFoundError:
-        return "2021-01-01T00:00:00.000Z"
+        return datetime(2021, 1, 1, tzinfo=timezone.utc)
 
 def save_last_check_time(timestamp):
     with open("last_check_time.txt", "w") as file:
-        file.write(timestamp)
+        file.write(timestamp.isoformat())
 
-# 초기화
-last_check_timestamp = load_last_check_time()
+# 메인 실행 함수
+def main():
+    last_check_timestamp = load_last_check_time()
+    database = fetch_database()
+    changes = check_for_changes(last_check_timestamp, database)
+    
+    if changes:
+        message = format_changes(changes)
+        send_slack_message(message)
+    
+    # 마지막 확인 시간 업데이트
+    current_time = datetime.now(timezone.utc)
+    save_last_check_time(current_time)
 
-# 주기적으로 데이터베이스 확인하기
-database = fetch_database()
-changes = check_for_changes(last_check_timestamp, database)
-
-if changes:
-    message = format_changes(changes)
-    send_slack_message(message)
-
-# 마지막 확인 시간 업데이트
-current_time = datetime.utcnow().isoformat() + "Z"
-save_last_check_time(current_time)
+if __name__ == "__main__":
+    main()
