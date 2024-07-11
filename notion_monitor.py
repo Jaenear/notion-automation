@@ -1,13 +1,15 @@
 import requests
 import os
-from datetime import datetime, timezone
+from datetime import datetime
+import logging
+
+# 로그 설정
+logging.basicConfig(level=logging.INFO)
 
 # 환경 변수에서 설정 값들 가져오기
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 DATABASE_ID = os.getenv("DATABASE_ID")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
-LAST_CHECK_TIME = os.getenv("LAST_CHECK_TIME")
-
 headers = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
     "Content-Type": "application/json",
@@ -25,7 +27,7 @@ def fetch_database():
 def check_for_changes(last_check_timestamp, database):
     changes = []
     for item in database['results']:
-        last_edited_time = datetime.fromisoformat(item['last_edited_time'].replace('Z', '+00:00'))
+        last_edited_time = item['last_edited_time']
         if last_edited_time > last_check_timestamp:
             changes.append(item)
     return changes
@@ -48,22 +50,31 @@ def send_slack_message(message):
     response = requests.post(SLACK_WEBHOOK_URL, json=payload)
     response.raise_for_status()
 
-# 메인 실행 함수
-def main():
-    if LAST_CHECK_TIME:
-        last_check_timestamp = datetime.fromisoformat(LAST_CHECK_TIME.replace('Z', '+00:00'))
-    else:
-        last_check_timestamp = datetime(2021, 1, 1, tzinfo=timezone.utc)
+# 마지막 확인 시간 저장 및 불러오기
+def load_last_check_time():
+    try:
+        with open("last_check_time.txt", "r") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return "2021-01-01T00:00:00.000Z"
 
-    database = fetch_database()
-    changes = check_for_changes(last_check_timestamp, database)
-    
-    if changes:
-        message = format_changes(changes)
-        send_slack_message(message)
-    
-    # 현재 시간을 출력 (GitHub Actions에서 이를 캡처하여 변수로 설정)
-    print(f"LAST_CHECK_TIME={datetime.now(timezone.utc).isoformat()[:-6]}Z")
+def save_last_check_time(timestamp):
+    with open("last_check_time.txt", "w") as file:
+        file.write(timestamp)
+    logging.info(f"Saved last check time: {timestamp}")
 
-if __name__ == "__main__":
-    main()
+# 초기화
+last_check_timestamp = load_last_check_time()
+logging.info(f"Loaded last check time: {last_check_timestamp}")
+
+# 주기적으로 데이터베이스 확인하기
+database = fetch_database()
+changes = check_for_changes(last_check_timestamp, database)
+if changes:
+    message = format_changes(changes)
+    send_slack_message(message)
+
+# 마지막 확인 시간 업데이트
+current_time = datetime.utcnow().isoformat() + "Z"
+save_last_check_time(current_time)
+logging.info(f"Updated last check time to: {current_time}")
