@@ -76,10 +76,21 @@ def get_changes_summary(title, new_content):
 def extract_text_from_content(content):
     text = ""
     for block in content.get('results', []):
-        if 'paragraph' in block:
-            for text_block in block['paragraph']['text']:
+        block_type = block.get('type')
+        if block_type == 'paragraph':
+            for text_block in block['paragraph'].get('text', []):
                 text += text_block['plain_text'] + "\n"
-        # 다른 블록 타입 처리 추가 가능
+        # 추가 블록 타입 처리 가능
+        elif block_type == 'heading_1':
+            for text_block in block['heading_1'].get('text', []):
+                text += "# " + text_block['plain_text'] + "\n"
+        elif block_type == 'heading_2':
+            for text_block in block['heading_2'].get('text', []):
+                text += "## " + text_block['plain_text'] + "\n"
+        elif block_type == 'heading_3':
+            for text_block in block['heading_3'].get('text', []):
+                text += "### " + text_block['plain_text'] + "\n"
+        # 추가 블록 타입을 필요에 따라 처리
     return text
 
 # 콘텐츠 비교
