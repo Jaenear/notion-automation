@@ -13,6 +13,13 @@ headers = {
     "Notion-Version": "2022-06-28"
 }
 
+# 사용자 정보 가져오기
+def fetch_user_info(user_id):
+    url = f"https://api.notion.com/v1/users/{user_id}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
 # 노션 데이터베이스에서 데이터 가져오기
 def fetch_database():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
@@ -38,7 +45,17 @@ def format_changes(changes):
         last_edited_time = datetime.fromisoformat(change['last_edited_time'].replace("Z", "+00:00"))
         last_edited_time_kst = last_edited_time + timedelta(hours=9)  # UTC+9
         last_edited_time_kst_str = last_edited_time_kst.strftime('%Y-%m-%d %H:%M:%S')
-        formatted_message += f"- [{title}]({url}) at {last_edited_time_kst_str} (KST)\n"
+        
+        # last_edited_by 필드에서 사용자 ID 가져오기
+        user_id = change.get('last_edited_by', {}).get('id', 'Unknown')
+        if user_id != 'Unknown':
+            # 사용자 정보 가져오기
+            user_info = fetch_user_info(user_id)
+            last_edited_by = user_info.get('name', 'Unknown User')
+        else:
+            last_edited_by = 'Unknown User'
+
+        formatted_message += f"- [{title}]({url}) at {last_edited_time_kst_str} (KST) by {last_edited_by}\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
