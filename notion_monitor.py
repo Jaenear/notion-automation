@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 
 # 로그 설정
@@ -62,7 +62,7 @@ def load_last_check_time():
             logging.info(f"Loaded last check time: {last_check_time}")
             return last_check_time
     except FileNotFoundError:
-        default_time = "2021-01-01T00:00:00.000Z"
+        default_time = (datetime.utcnow() - timedelta(days=1)).isoformat() + 'Z'  # 기본 값을 하루 전으로 설정
         logging.info(f"File not found. Using default time: {default_time}")
         return default_time
 
@@ -81,7 +81,7 @@ if changes:
     message = format_changes(changes)
     send_slack_message(message)
     # 마지막 확인 시간 업데이트
-    current_time = datetime.now(timezone.utc).isoformat()
+    current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat() + 'Z'
     save_last_check_time(current_time)
     logging.info(f"Updated last check time to: {current_time}")
 else:
