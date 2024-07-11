@@ -56,7 +56,13 @@ def format_changes(changes):
 
 # 페이지 변경 요약 가져오기
 def get_changes_summary(title, new_content):
-    old_content_file = f"old_content_{title}.txt"
+    old_content_dir = "old_contents"
+    old_content_file = f"{old_content_dir}/old_content_{title}.txt"
+    
+    # 디렉터리가 없으면 생성
+    if not os.path.exists(old_content_dir):
+        os.makedirs(old_content_dir)
+
     new_content_text = extract_text_from_content(new_content)
 
     if os.path.exists(old_content_file):
@@ -80,7 +86,6 @@ def extract_text_from_content(content):
         if block_type == 'paragraph':
             for text_block in block['paragraph'].get('text', []):
                 text += text_block['plain_text'] + "\n"
-        # 추가 블록 타입 처리 가능
         elif block_type == 'heading_1':
             for text_block in block['heading_1'].get('text', []):
                 text += "# " + text_block['plain_text'] + "\n"
