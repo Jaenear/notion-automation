@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
 
 # 환경 변수에서 설정 값들 가져오기
@@ -49,6 +49,14 @@ def convert_to_local_time(utc_time_str, local_timezone):
     local_time = utc_time.astimezone(pytz.timezone(local_timezone))
     return local_time.strftime("%Y-%m-%d %H:%M:%S")
 
+# 사용자 정보 가져오기
+def fetch_user_info(user_id):
+    url = f"https://api.notion.com/v1/users/{user_id}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    user_info = response.json()
+    return user_info['name']
+
 # 변경 사항 포맷팅하기
 def format_changes(changes):
     formatted_message = "Changes detected:\n"
@@ -58,7 +66,8 @@ def format_changes(changes):
         title = item['properties']['이름']['title'][0]['plain_text']
         url = item['url']
         last_edited_time = convert_to_local_time(item['last_edited_time'], LOCAL_TIMEZONE)
-        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
+        last_edited_by = fetch_user_info(item['last_edited_by']['id'])
+        formatted_message += f"- [{title}]({url}) at {last_edited_time} by {last_edited_by}\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
