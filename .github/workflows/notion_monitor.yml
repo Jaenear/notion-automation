@@ -1,16 +1,15 @@
-# .github/workflows/notion_monitor.yml
-
 name: Monitor Notion Database
-
 on:
   schedule:
     - cron: "*/6 * * * *"  # 매 6분마다 실행
   workflow_dispatch:
 
+env:
+  LAST_CHECK_TIME: ${{ vars.LAST_CHECK_TIME }}
+
 jobs:
   monitor:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -23,13 +22,6 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Cache last check time
-        id: cache-last-check-time
-        uses: actions/cache@v2
-        with:
-          path: last_check_time.txt
-          key: last-check-time
-
       - name: Run Notion monitor script
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
@@ -37,14 +29,14 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python notion_monitor.py
 
-      - name: Save last check time
-        if: always()
+      - name: Update last check time
+        if: success()
         run: |
-          echo "::set-output name=last-check-time::$(cat last_check_time.txt)"
-        id: save-last-check-time
+          echo "LAST_CHECK_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
-      - name: Update cache with new last check time
-        uses: actions/upload-artifact@v2
-        with:
-          name: last-check-time
-          path: last_check_time.txt
+      - name: Save last check time
+        if: success()
+        run: |
+          echo ${{ env.LAST_CHECK_TIME }} | gh variable set LAST_CHECK_TIME
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
