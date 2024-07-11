@@ -82,6 +82,6 @@ if changes:
     send_slack_message(message)
 
 # 마지막 확인 시간 업데이트
-current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+current_time = datetime.now(timezone.utc).isoformat()
 save_last_check_time(current_time)
 logging.info(f"Updated last check time to: {current_time}")
