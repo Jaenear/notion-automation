@@ -5,7 +5,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-file_path = "/path/to/your/last_check_time.txt"  # 절대 경로로 수정
+file_path = "/home/runner/work/notion-automation/notion-automation/last_check_time.txt"  # 절대 경로로 수정
 
 # Load last check time
 if os.path.exists(file_path):
