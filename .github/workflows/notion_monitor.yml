@@ -36,11 +36,4 @@ jobs:
       
       - name: Save last check time
         if: always()
-        run: |
-          echo "::set-output name=last-check-time::$(cat last_check_time.txt)"
-      
-      - name: Update cache with new last check time
-        uses: actions/upload-artifact@v2
-        with:
-          name: last-check-time
-          path: last_check_time.txt
+        run: cat last_check_time.txt >> $GITHUB_ENV
