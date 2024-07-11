@@ -23,9 +23,21 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      - name: Cache last check time
+        uses: actions/cache@v2
+        with:
+          path: last_check_time.txt
+          key: last-check-time
+
       - name: Run Notion monitor script
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           DATABASE_ID: ${{ secrets.DATABASE_ID }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python notion_monitor.py
+
+      - name: Update cache with new last check time
+        uses: actions/upload-artifact@v2
+        with:
+          name: last-check-time
+          path: last_check_time.txt
