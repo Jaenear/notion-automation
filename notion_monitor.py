@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 DATABASE_ID = os.getenv("DATABASE_ID")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+LAST_CHECK_TIME = os.getenv("LAST_CHECK_TIME")
 
 headers = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
@@ -47,31 +48,19 @@ def send_slack_message(message):
     response = requests.post(SLACK_WEBHOOK_URL, json=payload)
     response.raise_for_status()
 
-# 마지막 확인 시간 저장 및 불러오기
-def load_last_check_time():
-    try:
-        with open("last_check_time.txt", "r") as file:
-            return datetime.fromisoformat(file.read().strip())
-    except FileNotFoundError:
-        return datetime(2021, 1, 1, tzinfo=timezone.utc)
-
-def save_last_check_time(timestamp):
-    with open("last_check_time.txt", "w") as file:
-        file.write(timestamp.isoformat())
-
 # 메인 실행 함수
 def main():
-    last_check_timestamp = load_last_check_time()
+    if LAST_CHECK_TIME:
+        last_check_timestamp = datetime.fromisoformat(LAST_CHECK_TIME.replace('Z', '+00:00'))
+    else:
+        last_check_timestamp = datetime(2021, 1, 1, tzinfo=timezone.utc)
+
     database = fetch_database()
     changes = check_for_changes(last_check_timestamp, database)
     
     if changes:
         message = format_changes(changes)
         send_slack_message(message)
-    
-    # 마지막 확인 시간 업데이트
-    current_time = datetime.now(timezone.utc)
-    save_last_check_time(current_time)
 
 if __name__ == "__main__":
     main()
