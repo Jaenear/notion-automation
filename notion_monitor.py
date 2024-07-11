@@ -1,5 +1,3 @@
-# notion_monitor.py
-
 import requests
 import os
 from datetime import datetime, timezone, timedelta
@@ -37,8 +35,8 @@ def format_changes(changes):
     for change in changes:
         title = change['properties']['이름']['title'][0]['plain_text']
         url = change['url']
-        last_edited_time = change['last_edited_time']
-        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
+        last_edited_by = change['last_edited_by']['name']
+        formatted_message += f"- [{title}]({url}) by {last_edited_by}\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
