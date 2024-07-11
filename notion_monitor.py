@@ -3,6 +3,7 @@
 import requests
 import time
 import os
+from datetime import datetime, timedelta
 
 # 환경 변수에서 설정 값들 가져오기
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
@@ -19,6 +20,7 @@ headers = {
 def fetch_database():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     response = requests.post(url, headers=headers)
+    response.raise_for_status()
     return response.json()
 
 # 변경 사항 확인하기
@@ -46,16 +48,31 @@ def send_slack_message(message):
         "text": message
     }
     response = requests.post(SLACK_WEBHOOK_URL, json=payload)
-    if response.status_code != 200:
-        raise ValueError(f"Request to Slack returned an error {response.status_code}, the response is:\n{response.text}")
+    response.raise_for_status()
+
+# 마지막 확인 시간 저장 및 불러오기
+def load_last_check_time():
+    try:
+        with open("last_check_time.txt", "r") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return "2021-01-01T00:00:00.000Z"
+
+def save_last_check_time(timestamp):
+    with open("last_check_time.txt", "w") as file:
+        file.write(timestamp)
 
 # 초기화
-last_check_timestamp = "2021-01-01T00:00:00.000Z"
+last_check_timestamp = load_last_check_time()
 
 # 주기적으로 데이터베이스 확인하기
 database = fetch_database()
 changes = check_for_changes(last_check_timestamp, database)
+
 if changes:
     message = format_changes(changes)
     send_slack_message(message)
-last_check_timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
+
+# 마지막 확인 시간 업데이트
+current_time = datetime.utcnow().isoformat() + "Z"
+save_last_check_time(current_time)
