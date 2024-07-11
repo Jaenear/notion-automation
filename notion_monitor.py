@@ -89,15 +89,10 @@ def extract_text_from_content(content):
         if block_type == 'paragraph':
             for text_block in block['paragraph'].get('text', []):
                 text += text_block['plain_text'] + "\n"
-        elif block_type == 'heading_1':
-            for text_block in block['heading_1'].get('text', []):
-                text += "# " + text_block['plain_text'] + "\n"
-        elif block_type == 'heading_2':
-            for text_block in block['heading_2'].get('text', []):
-                text += "## " + text_block['plain_text'] + "\n"
-        elif block_type == 'heading_3':
-            for text_block in block['heading_3'].get('text', []):
-                text += "### " + text_block['plain_text'] + "\n"
+        elif block_type.startswith('heading_'):
+            level = int(block_type.split('_')[1])
+            for text_block in block[block_type].get('text', []):
+                text += "#" * level + " " + text_block['plain_text'] + "\n"
         # 추가 블록 타입을 필요에 따라 처리
     return text
 
