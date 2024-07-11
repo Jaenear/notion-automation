@@ -76,8 +76,10 @@ def get_changes_summary(title, new_content):
 def extract_text_from_content(content):
     text = ""
     for block in content.get('results', []):
-        if block['type'] == 'paragraph':
-            text += block['paragraph']['text'][0]['plain_text'] + "\n"
+        if 'paragraph' in block:
+            for text_block in block['paragraph']['text']:
+                text += text_block['plain_text'] + "\n"
+        # 다른 블록 타입 처리 추가 가능
     return text
 
 # 콘텐츠 비교
