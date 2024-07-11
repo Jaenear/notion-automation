@@ -26,9 +26,11 @@ def fetch_database():
 # 변경 사항 확인하기
 def check_for_changes(last_check_timestamp, database):
     changes = []
+    last_check_dt = datetime.fromisoformat(last_check_timestamp)
     for item in database['results']:
         last_edited_time = item['last_edited_time']
-        if last_edited_time > last_check_timestamp:
+        last_edited_dt = datetime.fromisoformat(last_edited_time[:-1])
+        if last_edited_dt > last_check_dt:
             changes.append(item)
     return changes
 
@@ -54,9 +56,13 @@ def send_slack_message(message):
 def load_last_check_time():
     try:
         with open("last_check_time.txt", "r") as file:
-            return file.read().strip()
+            last_check_time = file.read().strip()
+            logging.info(f"Loaded last check time: {last_check_time}")
+            return last_check_time
     except FileNotFoundError:
-        return "2021-01-01T00:00:00.000Z"
+        default_time = "2021-01-01T00:00:00.000Z"
+        logging.info(f"File not found. Using default time: {default_time}")
+        return default_time
 
 def save_last_check_time(timestamp):
     with open("last_check_time.txt", "w") as file:
@@ -65,7 +71,6 @@ def save_last_check_time(timestamp):
 
 # 초기화
 last_check_timestamp = load_last_check_time()
-logging.info(f"Loaded last check time: {last_check_timestamp}")
 
 # 주기적으로 데이터베이스 확인하기
 database = fetch_database()
