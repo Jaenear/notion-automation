@@ -1,13 +1,14 @@
+# notion_monitor.py
+
 import requests
+import time
 import os
-from datetime import datetime
-import pytz
+from datetime import datetime, timedelta
 
 # 환경 변수에서 설정 값들 가져오기
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 DATABASE_ID = os.getenv("DATABASE_ID")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
-LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE", "Asia/Seoul")  # 기본 값으로 "Asia/Seoul" 설정
 
 headers = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
@@ -22,52 +23,23 @@ def fetch_database():
     response.raise_for_status()
     return response.json()
 
-# 페이지 내용 가져오기
-def fetch_page_content(page_id):
-    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
-
 # 변경 사항 확인하기
 def check_for_changes(last_check_timestamp, database):
     changes = []
     for item in database['results']:
         last_edited_time = item['last_edited_time']
         if last_edited_time > last_check_timestamp:
-            page_id = item['id']
-            page_content = fetch_page_content(page_id)
-            changes.append({
-                'item': item,
-                'content': page_content
-            })
+            changes.append(item)
     return changes
-
-# UTC 시간을 로컬 시간으로 변환하기
-def convert_to_local_time(utc_time_str, local_timezone):
-    utc_time = datetime.fromisoformat(utc_time_str.replace("Z", "+00:00"))
-    local_time = utc_time.astimezone(pytz.timezone(local_timezone))
-    return local_time.strftime("%Y-%m-%d %H:%M:%S")
-
-# 사용자 정보 가져오기
-def fetch_user_info(user_id):
-    url = f"https://api.notion.com/v1/users/{user_id}"
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    user_info = response.json()
-    return user_info['name']
 
 # 변경 사항 포맷팅하기
 def format_changes(changes):
     formatted_message = "Changes detected:\n"
     for change in changes:
-        item = change['item']
-        content = change['content']
-        title = item['properties']['이름']['title'][0]['plain_text']
-        url = item['url']
-        last_edited_time = convert_to_local_time(item['last_edited_time'], LOCAL_TIMEZONE)
-        last_edited_by = fetch_user_info(item['last_edited_by']['id'])
-        formatted_message += f"- [{title}]({url}) at {last_edited_time} by {last_edited_by}\n"
+        title = change['properties']['이름']['title'][0]['plain_text']
+        url = change['url']
+        last_edited_time = change['last_edited_time']
+        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
