@@ -2,6 +2,8 @@ name: Notion Monitor
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
 
 jobs:
   monitor:
@@ -19,15 +21,14 @@ jobs:
     - name: Install dependencies
       run: pip install requests
 
-    - name: Check last check time
+    - name: Check if last_check_time.txt exists
       run: |
-        if [ -f last_check_time.txt ]; then
+        if [ -f /home/runner/work/notion-automation/notion-automation/last_check_time.txt ]; then
           echo "Last check time file exists"
-          cat last_check_time.txt
+          cat /home/runner/work/notion-automation/notion-automation/last_check_time.txt
         else
           echo "Last check time file does not exist. Creating a new one."
-          echo "2021-01-01T00:00:00.000Z" > last_check_time.txt
-        fi
+          echo "2021-01-01T00:00:00.000Z" > /home/runner/work/notion-automation/notion-automation/last_check_time.txt
 
     - name: Run Notion monitor script
       run: python notion_monitor.py
@@ -36,11 +37,11 @@ jobs:
         DATABASE_ID: ${{ secrets.DATABASE_ID }}
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-    - name: Save last check time
-      run: echo "LAST_CHECK_TIME=$(cat last_check_time.txt)" >> $GITHUB_ENV
+    - name: Save last check time to environment
+      run: echo "LAST_CHECK_TIME=$(cat /home/runner/work/notion-automation/notion-automation/last_check_time.txt)" >> $GITHUB_ENV
 
-    - name: Upload last check time artifact
+    - name: Upload last check time
       uses: actions/upload-artifact@v2
       with:
         name: last-check-time
-        path: last_check_time.txt
+        path: /home/runner/work/notion-automation/notion-automation/last_check_time.txt
