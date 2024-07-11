@@ -1,5 +1,3 @@
-# notion_monitor.py
-
 import requests
 import os
 from datetime import datetime, timezone, timedelta
@@ -34,11 +32,14 @@ def check_for_changes(start_time, database):
 # 변경 사항 포맷팅하기
 def format_changes(changes):
     formatted_message = "Changes detected:\n"
+    now = datetime.now(timezone.utc)
     for change in changes:
         title = change['properties']['이름']['title'][0]['plain_text']
         url = change['url']
-        last_edited_time = change['last_edited_time']
-        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
+        last_edited_time = datetime.fromisoformat(change['last_edited_time'].replace("Z", "+00:00"))
+        time_diff = now - last_edited_time
+        minutes_ago = int(time_diff.total_seconds() // 60)
+        formatted_message += f"- [{title}]({url}) at {minutes_ago}분 전에 변경됨\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
@@ -58,4 +59,4 @@ changes = check_for_changes(start_time, database)
 
 if changes:
     message = format_changes(changes)
-    send_slack_message(message)
+    send_slack_message(message
