@@ -26,7 +26,7 @@ def fetch_database():
 # 변경 사항 확인하기
 def check_for_changes(last_check_timestamp, database):
     changes = []
-    last_check_dt = datetime.fromisoformat(last_check_timestamp).replace(tzinfo=timezone.utc)
+    last_check_dt = datetime.fromisoformat(last_check_timestamp[:-1]).replace(tzinfo=timezone.utc)
     logging.info(f"Checking for changes since: {last_check_dt}")
     for item in database['results']:
         last_edited_time = item['last_edited_time']
