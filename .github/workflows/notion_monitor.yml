@@ -19,7 +19,6 @@ jobs:
         run: pip install requests
       
       - name: Load last check time
-        id: load-last-check-time
         run: |
           if [ -f last_check_time.txt ]; then
             echo "Last check time file exists"
@@ -27,7 +26,6 @@ jobs:
           else
             echo "Last check time file does not exist. Creating a new one."
             echo "2021-01-01T00:00:00.000Z" > last_check_time.txt
-          fi
       
       - name: Run Notion monitor script
         env:
@@ -40,7 +38,6 @@ jobs:
         if: always()
         run: |
           echo "::set-output name=last-check-time::$(cat last_check_time.txt)"
-        id: save-last-check-time
       
       - name: Update cache with new last check time
         uses: actions/upload-artifact@v2
