@@ -1,3 +1,5 @@
+# notion_monitor.py
+
 import requests
 import os
 from datetime import datetime
@@ -20,82 +22,24 @@ def fetch_database():
     response.raise_for_status()
     return response.json()
 
-# 페이지 내용 가져오기
-def fetch_page_content(page_id):
-    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
-
 # 변경 사항 확인하기
 def check_for_changes(last_check_timestamp, database):
     changes = []
     for item in database['results']:
         last_edited_time = item['last_edited_time']
         if last_edited_time > last_check_timestamp:
-            page_id = item['id']
-            page_content = fetch_page_content(page_id)
-            changes.append({
-                'item': item,
-                'content': page_content
-            })
+            changes.append(item)
     return changes
 
 # 변경 사항 포맷팅하기
 def format_changes(changes):
     formatted_message = "Changes detected:\n"
     for change in changes:
-        item = change['item']
-        content = change['content']
-        title = item['properties']['이름']['title'][0]['plain_text']
-        url = item['url']
-        last_edited_time = item['last_edited_time']
-        changes_summary = get_changes_summary(title, content)
-        formatted_message += f"- [{title}]({url}) at {last_edited_time}, {changes_summary}\n"
+        title = change['properties']['이름']['title'][0]['plain_text']
+        url = change['url']
+        last_edited_time = change['last_edited_time']
+        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
     return formatted_message
-
-# 페이지 변경 요약 가져오기
-def get_changes_summary(title, new_content):
-    old_content_file = f"old_content_{title}.txt"
-    new_content_text = extract_text_from_content(new_content)
-
-    if os.path.exists(old_content_file):
-        with open(old_content_file, "r") as file:
-            old_content_text = file.read()
-    else:
-        old_content_text = ""
-
-    changes_summary = compare_content(old_content_text, new_content_text)
-
-    with open(old_content_file, "w") as file:
-        file.write(new_content_text)
-
-    return changes_summary
-
-# 콘텐츠에서 텍스트 추출
-def extract_text_from_content(content):
-    text = ""
-    for block in content.get('results', []):
-        if block['type'] == 'paragraph':
-            text += block['paragraph']['text'][0]['plain_text'] + "\n"
-    return text
-
-# 콘텐츠 비교
-def compare_content(old_content, new_content):
-    old_lines = old_content.splitlines()
-    new_lines = new_content.splitlines()
-
-    changes = []
-    for i, line in enumerate(new_lines):
-        if i >= len(old_lines):
-            changes.append(f"Added: {line}")
-        elif line != old_lines[i]:
-            changes.append(f"Changed: {line}")
-
-    for i in range(len(new_lines), len(old_lines)):
-        changes.append(f"Removed: {old_lines[i]}")
-
-    return ", ".join(changes)
 
 # 슬랙으로 알림 보내기
 def send_slack_message(message):
