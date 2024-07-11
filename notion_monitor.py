@@ -30,6 +30,16 @@ def check_for_changes(last_check_timestamp, database):
             changes.append(item)
     return changes
 
+# 변경 사항 포맷팅하기
+def format_changes(changes):
+    formatted_message = "Changes detected:\n"
+    for change in changes:
+        title = change['properties']['이름']['title'][0]['plain_text']
+        url = change['url']
+        last_edited_time = change['last_edited_time']
+        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
+    return formatted_message
+
 # 슬랙으로 알림 보내기
 def send_slack_message(message):
     payload = {
@@ -46,6 +56,6 @@ last_check_timestamp = "2021-01-01T00:00:00.000Z"
 database = fetch_database()
 changes = check_for_changes(last_check_timestamp, database)
 if changes:
-    message = f"Changes detected: {changes}"
+    message = format_changes(changes)
     send_slack_message(message)
 last_check_timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
