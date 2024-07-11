@@ -1,5 +1,3 @@
-# notion_monitor.py
-
 import requests
 import os
 from datetime import datetime
@@ -31,6 +29,14 @@ def check_for_changes(last_check_timestamp, database):
             changes.append(item)
     return changes
 
+# 사용자 이름 가져오기
+def fetch_user_name(user_id):
+    url = f"https://api.notion.com/v1/users/{user_id}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    user_info = response.json()
+    return user_info['name']
+
 # 변경 사항 포맷팅하기
 def format_changes(changes):
     formatted_message = "Changes detected:\n"
@@ -38,7 +44,9 @@ def format_changes(changes):
         title = change['properties']['이름']['title'][0]['plain_text']
         url = change['url']
         last_edited_time = change['last_edited_time']
-        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
+        last_edited_by_id = change['last_edited_by']['id']
+        last_edited_by_name = fetch_user_name(last_edited_by_id)
+        formatted_message += f"- [{title}]({url}) at {last_edited_time} by {last_edited_by_name}\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
