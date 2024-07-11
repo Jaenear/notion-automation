@@ -61,6 +61,9 @@ def main():
     if changes:
         message = format_changes(changes)
         send_slack_message(message)
+    
+    # 현재 시간을 출력 (GitHub Actions에서 이를 캡처하여 변수로 설정)
+    print(f"LAST_CHECK_TIME={datetime.now(timezone.utc).isoformat()[:-6]}Z")
 
 if __name__ == "__main__":
     main()
