@@ -35,8 +35,10 @@ def format_changes(changes):
     for change in changes:
         title = change['properties']['이름']['title'][0]['plain_text']
         url = change['url']
-        last_edited_by = change['last_edited_by']['name']
-        formatted_message += f"- [{title}]({url}) by {last_edited_by}\n"
+        last_edited_time = datetime.fromisoformat(change['last_edited_time'].replace("Z", "+00:00"))
+        last_edited_time_kst = last_edited_time + timedelta(hours=9)  # UTC+9
+        last_edited_time_kst_str = last_edited_time_kst.strftime('%Y-%m-%d %H:%M:%S')
+        formatted_message += f"- [{title}]({url}) at {last_edited_time_kst_str} (KST)\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
