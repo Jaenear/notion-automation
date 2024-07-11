@@ -1,3 +1,5 @@
+# notion_monitor.py
+
 import requests
 import os
 from datetime import datetime
@@ -36,8 +38,7 @@ def format_changes(changes):
         title = change['properties']['이름']['title'][0]['plain_text']
         url = change['url']
         last_edited_time = change['last_edited_time']
-        last_edited_by_name = change['last_edited_by']['name']  # 수정한 사람의 이름 가져오기
-        formatted_message += f"- [{title}]({url}) at {last_edited_time} by {last_edited_by_name}\n"
+        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
     return formatted_message
 
 # 슬랙으로 알림 보내기
