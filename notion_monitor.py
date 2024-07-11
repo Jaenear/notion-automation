@@ -1,11 +1,13 @@
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 # 환경 변수에서 설정 값들 가져오기
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 DATABASE_ID = os.getenv("DATABASE_ID")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE", "Asia/Seoul")  # 기본 값으로 "Asia/Seoul" 설정
 
 headers = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
@@ -41,6 +43,12 @@ def check_for_changes(last_check_timestamp, database):
             })
     return changes
 
+# UTC 시간을 로컬 시간으로 변환하기
+def convert_to_local_time(utc_time_str, local_timezone):
+    utc_time = datetime.fromisoformat(utc_time_str.replace("Z", "+00:00"))
+    local_time = utc_time.astimezone(pytz.timezone(local_timezone))
+    return local_time.strftime("%Y-%m-%d %H:%M:%S")
+
 # 변경 사항 포맷팅하기
 def format_changes(changes):
     formatted_message = "Changes detected:\n"
@@ -49,69 +57,9 @@ def format_changes(changes):
         content = change['content']
         title = item['properties']['이름']['title'][0]['plain_text']
         url = item['url']
-        last_edited_time = item['last_edited_time']
-        changes_summary = get_changes_summary(title, content)
-        formatted_message += f"- [{title}]({url}) at {last_edited_time}, {changes_summary}\n"
+        last_edited_time = convert_to_local_time(item['last_edited_time'], LOCAL_TIMEZONE)
+        formatted_message += f"- [{title}]({url}) at {last_edited_time}\n"
     return formatted_message
-
-# 파일 이름 안전하게 변환
-def safe_filename(filename):
-    return "".join(c if c.isalnum() else "_" for c in filename)
-
-# 페이지 변경 요약 가져오기
-def get_changes_summary(title, new_content):
-    old_content_dir = "old_contents"
-    os.makedirs(old_content_dir, exist_ok=True)  # 디렉터리가 없으면 생성
-
-    safe_title = safe_filename(title)
-    old_content_file = f"{old_content_dir}/old_content_{safe_title}.txt"
-
-    new_content_text = extract_text_from_content(new_content)
-
-    if os.path.exists(old_content_file):
-        with open(old_content_file, "r") as file:
-            old_content_text = file.read()
-    else:
-        old_content_text = ""
-
-    changes_summary = compare_content(old_content_text, new_content_text)
-
-    with open(old_content_file, "w") as file:
-        file.write(new_content_text)
-
-    return changes_summary
-
-# 콘텐츠에서 텍스트 추출
-def extract_text_from_content(content):
-    text = ""
-    for block in content.get('results', []):
-        block_type = block.get('type')
-        if block_type == 'paragraph':
-            for text_block in block['paragraph'].get('text', []):
-                text += text_block['plain_text'] + "\n"
-        elif block_type.startswith('heading_'):
-            level = int(block_type.split('_')[1])
-            for text_block in block[block_type].get('text', []):
-                text += "#" * level + " " + text_block['plain_text'] + "\n"
-        # 추가 블록 타입을 필요에 따라 처리
-    return text
-
-# 콘텐츠 비교
-def compare_content(old_content, new_content):
-    old_lines = old_content.splitlines()
-    new_lines = new_content.splitlines()
-
-    changes = []
-    for i, line in enumerate(new_lines):
-        if i >= len(old_lines):
-            changes.append(f"Added: {line}")
-        elif line != old_lines[i]:
-            changes.append(f"Changed: {line}")
-
-    for i in range(len(new_lines), len(old_lines)):
-        changes.append(f"Removed: {old_lines[i]}")
-
-    return ", ".join(changes)
 
 # 슬랙으로 알림 보내기
 def send_slack_message(message):
