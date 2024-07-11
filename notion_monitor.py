@@ -54,14 +54,17 @@ def format_changes(changes):
         formatted_message += f"- [{title}]({url}) at {last_edited_time}, {changes_summary}\n"
     return formatted_message
 
+# 파일 이름 안전하게 변환
+def safe_filename(filename):
+    return "".join(c if c.isalnum() else "_" for c in filename)
+
 # 페이지 변경 요약 가져오기
 def get_changes_summary(title, new_content):
     old_content_dir = "old_contents"
-    old_content_file = f"{old_content_dir}/old_content_{title}.txt"
-    
-    # 디렉터리가 없으면 생성
-    if not os.path.exists(old_content_dir):
-        os.makedirs(old_content_dir)
+    os.makedirs(old_content_dir, exist_ok=True)  # 디렉터리가 없으면 생성
+
+    safe_title = safe_filename(title)
+    old_content_file = f"{old_content_dir}/old_content_{safe_title}.txt"
 
     new_content_text = extract_text_from_content(new_content)
 
