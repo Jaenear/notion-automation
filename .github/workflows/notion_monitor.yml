@@ -3,31 +3,47 @@ on:
   schedule:
     - cron: "*/6 * * * *"  # 매 6분마다 실행
   workflow_dispatch:
-
 jobs:
   monitor:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
+      
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.x
-
+      
       - name: Install dependencies
         run: pip install requests
-
+      
+      - name: Load last check time
+        id: load-last-check-time
+        run: |
+          if [ -f last_check_time.txt ]; then
+            echo "Last check time file exists"
+            cat last_check_time.txt
+          else
+            echo "Last check time file does not exist. Creating a new one."
+            echo "2021-01-01T00:00:00.000Z" > last_check_time.txt
+          fi
+      
       - name: Run Notion monitor script
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           DATABASE_ID: ${{ secrets.DATABASE_ID }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          LAST_CHECK_TIME: ${{ vars.LAST_CHECK_TIME }}
         run: python notion_monitor.py
-
-      - name: Update last check time
-        if: success()
+      
+      - name: Save last check time
+        if: always()
         run: |
-          echo "LAST_CHECK_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "::set-output name=last-check-time::$(cat last_check_time.txt)"
+        id: save-last-check-time
+      
+      - name: Update cache with new last check time
+        uses: actions/upload-artifact@v2
+        with:
+          name: last-check-time
+          path: last_check_time.txt
