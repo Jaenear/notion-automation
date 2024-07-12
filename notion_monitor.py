@@ -1,55 +1,54 @@
 import requests
-import os
-import re
-from collections import Counter
 import pandas as pd
+from collections import Counter
 
-# 환경 변수에서 설정 값들 가져오기
-NOTION_API_KEY = os.getenv("NOTION_API_KEY")
+# 노션 API 키와 데이터베이스 ID 설정
+NOTION_API_KEY = "your_notion_api_key"
+DATABASE_ID = "your_database_id"
+NOTION_VERSION = "2021-08-16"
 
 headers = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
-    "Content-Type": "application/json",
-    "Notion-Version": "2022-06-28"
+    "Notion-Version": NOTION_VERSION,
+    "Content-Type": "application/json"
 }
 
-# 사용자 정보 조회 함수 정의
-def fetch_all_users():
-    url = "https://api.notion.com/v1/users"
-    user_ids = []
-    response = requests.get(url, headers=headers)
+def fetch_users_in_database(database_id):
+    url = f"https://api.notion.com/v1/databases/{database_id}/query"
+    response = requests.post(url, headers=headers)
     response.raise_for_status()
-    data = response.json()
-    user_ids.extend([user['id'] for user in data['results']])
+    return response.json()
+
+def extract_user_ids(pages):
+    user_ids = []
+    for page in pages:
+        if "properties" in page:
+            for prop in page["properties"].values():
+                if prop["type"] == "people":
+                    user_ids.extend([person["id"] for person in prop["people"]])
     return user_ids
 
-# 노션 API를 사용하여 모든 사용자 ID를 가져오기
-try:
-    all_user_ids = fetch_all_users()
-except requests.exceptions.HTTPError as e:
-    print(f"HTTP error occurred: {e}")
-    all_user_ids = []
+def extract_last_edited_by_ids(pages):
+    last_edited_by_ids = [page["last_edited_by"]["id"] for page in pages if "last_edited_by" in page]
+    return last_edited_by_ids
 
-# 로그 파일 경로
-log_file_path = '0_monitor.txt'
+# 데이터베이스에서 페이지들 가져오기
+database_data = fetch_users_in_database(DATABASE_ID)
+pages = database_data["results"]
 
-# 로그 파일 읽기
-with open(log_file_path, 'r') as file:
-    log_data = file.read()
+# 사용자 ID 추출
+user_ids = extract_user_ids(pages)
+last_edited_by_ids = extract_last_edited_by_ids(pages)
 
-# last_edited_by 필드의 ID 추출
-last_edited_by_pattern = re.compile(r"'last_edited_by': {'object': 'user', 'id': '(.*?)'}")
-last_edited_by_ids = last_edited_by_pattern.findall(log_data)
-
-# ID 발생 횟수 계산
-last_edited_by_counts = Counter(last_edited_by_ids)
+# 사용자 ID 빈도수 계산
+user_id_counts = Counter(user_ids)
+last_edited_by_id_counts = Counter(last_edited_by_ids)
 
 # 데이터프레임 생성 및 저장
-last_edited_by_df = pd.DataFrame(last_edited_by_counts.items(), columns=['ID', 'Count'])
-last_edited_by_df.to_csv('last_edited_by_ids.csv', index=False)
+user_id_df = pd.DataFrame(user_id_counts.items(), columns=["User ID", "Count"])
+last_edited_by_df = pd.DataFrame(last_edited_by_id_counts.items(), columns=["Last Edited By ID", "Count"])
 
-user_id_df = pd.DataFrame(all_user_ids, columns=['ID'])
-user_id_df['Count'] = 0  # 사용자 ID는 빈도수를 계산할 필요가 없으므로 0으로 설정
-user_id_df.to_csv('user_ids.csv', index=False)
+user_id_df.to_csv("user_ids.csv", index=False)
+last_edited_by_df.to_csv("last_edited_by_ids.csv", index=False)
 
-print("Data extraction complete. Check last_edited_by_ids.csv and user_ids.csv for results.")
+print("User ID extraction complete. Check user_ids.csv and last_edited_by_ids.csv for results.")
