@@ -32,7 +32,7 @@ for user_id in last_edited_by_ids:
     try:
         user_info = fetch_user_info(user_id)
         user_info_list.append(user_info)
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         user_info_list.append({'user_id': user_id, 'error': str(e)})
 
 # 사용자 정보 출력
