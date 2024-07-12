@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 구글 캘린더</title>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js'></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #calendar {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .fc-toolbar-chunk {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id='calendar'></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                themeSystem: 'standard',
+                height: 'auto',
+                editable: true,  // 드래그 앤 드롭 및 리사이즈 가능하도록 설정
+                googleCalendarApiKey: 'AIzaSyBxy_-u0lehrEdwkANFkFcHDiyHhh5Lksk',
+                eventSources: [
+                    { 
+                        googleCalendarId: '8fb5e33241ef86464dee64717ccc157725314f7c8f036ee53cb7b771fbb7f446@group.calendar.google.com'
+                    }
+                ],
+                eventDidMount: function(info) {
+                    var description = info.event.extendedProps.description;
+                    if (description) {
+                        if (description.includes("원본 캘린더: J.업무 부여")) {
+                            info.el.style.backgroundColor = '#FF0000';  // 빨강
+                            info.el.style.borderColor = '#FF0000';
+                        } else if (description.includes("원본 캘린더: D. 업무배분")) {
+                            info.el.style.backgroundColor = '#FFA500';  // 주황
+                            info.el.style.borderColor = '#FFA500';
+                        } else if (description.includes("원본 캘린더: S. 업무시간")) {
+                            info.el.style.backgroundColor = '#00BFFF';  // 하늘
+                            info.el.style.borderColor = '#00BFFF';
+                        } else if (description.includes("원본 캘린더: R.업무배분")) {
+                            info.el.style.backgroundColor = '#90EE90';  // 연두
+                            info.el.style.borderColor = '#90EE90';
+                        }
+                        info.el.title = description;
+                    }
+                }
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+</html>
