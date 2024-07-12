@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주간업무시간 요약</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #totals {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div id="totals">
+        <h3>주간업무시간 총합</h3>
+        <div id="weekly-totals" class="category-total">총합: 0시간 0분</div>
+        <h3>카테고리별 총합</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>카테고리</th>
+                    <th>총합</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>이재준</td>
+                    <td id="j-totals">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>박동재</td>
+                    <td id="d-totals">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>박상준</td>
+                    <td id="s-totals">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>최람</td>
+                    <td id="r-totals">0시간 0분</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>요일별 업무시간</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>요일</th>
+                    <th>이재준</th>
+                    <th>박동재</th>
+                    <th>박상준</th>
+                    <th>최람</th>
+                </tr>
+            </thead>
+            <tbody id="daily-breakdown">
+                <tr>
+                    <td>일</td>
+                    <td id="daily-j-sun">0시간 0분</td>
+                    <td id="daily-d-sun">0시간 0분</td>
+                    <td id="daily-s-sun">0시간 0분</td>
+                    <td id="daily-r-sun">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>월</td>
+                    <td id="daily-j-mon">0시간 0분</td>
+                    <td id="daily-d-mon">0시간 0분</td>
+                    <td id="daily-s-mon">0시간 0분</td>
+                    <td id="daily-r-mon">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>화</td>
+                    <td id="daily-j-tue">0시간 0분</td>
+                    <td id="daily-d-tue">0시간 0분</td>
+                    <td id="daily-s-tue">0시간 0분</td>
+                    <td id="daily-r-tue">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>수</td>
+                    <td id="daily-j-wed">0시간 0분</td>
+                    <td id="daily-d-wed">0시간 0분</td>
+                    <td id="daily-s-wed">0시간 0분</td>
+                    <td id="daily-r-wed">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>목</td>
+                    <td id="daily-j-thu">0시간 0분</td>
+                    <td id="daily-d-thu">0시간 0분</td>
+                    <td id="daily-s-thu">0시간 0분</td>
+                    <td id="daily-r-thu">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>금</td>
+                    <td id="daily-j-fri">0시간 0분</td>
+                    <td id="daily-d-fri">0시간 0분</td>
+                    <td id="daily-s-fri">0시간 0분</td>
+                    <td id="daily-r-fri">0시간 0분</td>
+                </tr>
+                <tr>
+                    <td>토</td>
+                    <td id="daily-j-sat">0시간 0분</td>
+                    <td id="daily-d-sat">0시간 0분</td>
+                    <td id="daily-s-sat">0시간 0분</td>
+                    <td id="daily-r-sat">0시간 0분</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 로컬 스토리지에서 데이터 가져오기
+            var weeklyTotal = localStorage.getItem('weeklyTotal') || '0시간 0분';
+            var totals = JSON.parse(localStorage.getItem('totals')) || {};
+            var dailyTotals = JSON.parse(localStorage.getItem('dailyTotals')) || {};
+
+            // 주간 총합 표시
+            document.getElementById('weekly-totals').innerText = '총합: ' + weeklyTotal;
+            
+            // 카테고리별 총합 표시
+            document.getElementById('j-totals').innerText = totals['이재준'] ? totals['이재준'] : '0시간 0분';
+            document.getElementById('d-totals').innerText = totals['박동재'] ? totals['박동재'] : '0시간 0분';
+            document.getElementById('s-totals').innerText = totals['박상준'] ? totals['박상준'] : '0시간 0분';
+            document.getElementById('r-totals').innerText = totals['최람'] ? totals['최람'] : '0시간 0분';
+
+            // 요일별 총합 표시
+            var days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            days.forEach((day, index) => {
+                document.getElementById(`daily-j-${day}`).innerText = dailyTotals['이재준'] ? dailyTotals['이재준'][index] : '0시간 0분';
+                document.getElementById(`daily-d-${day}`).innerText = dailyTotals['박동재'] ? dailyTotals['박동재'][index] : '0시간 0분';
+                document.getElementById(`daily-s-${day}`).innerText = dailyTotals['박상준'] ? dailyTotals['박상준'][index] : '0시간 0분';
+                document.getElementById(`daily-r-${day}`).innerText = dailyTotals['최람'] ? dailyTotals['최람'][index] : '0시간 0분';
+            });
+        });
+    </script>
+</body>
+</html>
