@@ -17,16 +17,18 @@ headers = {
 def fetch_all_users():
     url = "https://api.notion.com/v1/users"
     user_ids = []
-    while url:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        user_ids.extend([user['id'] for user in data['results']])
-        url = data.get('next_cursor')
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    user_ids.extend([user['id'] for user in data['results']])
     return user_ids
 
 # 노션 API를 사용하여 모든 사용자 ID를 가져오기
-all_user_ids = fetch_all_users()
+try:
+    all_user_ids = fetch_all_users()
+except requests.exceptions.HTTPError as e:
+    print(f"HTTP error occurred: {e}")
+    all_user_ids = []
 
 # 로그 파일 경로
 log_file_path = '0_monitor.txt'
