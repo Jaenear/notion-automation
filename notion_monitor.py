@@ -13,6 +13,13 @@ headers = {
     "Notion-Version": "2022-06-28"
 }
 
+# 노션 사용자 정보 가져오기
+def fetch_user_id():
+    url = "https://api.notion.com/v1/users/me"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()['id']
+
 # 노션 데이터베이스에서 데이터 가져오기
 def fetch_database():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
@@ -21,11 +28,12 @@ def fetch_database():
     return response.json()
 
 # 변경 사항 확인하기
-def check_for_changes(start_time, database):
+def check_for_changes(start_time, database, user_id):
     changes = []
     for item in database['results']:
         last_edited_time = item['last_edited_time']
-        if last_edited_time > start_time:
+        last_edited_by = item['last_edited_by']['id']
+        if last_edited_time > start_time and last_edited_by != user_id:
             changes.append(item)
     return changes
 
@@ -53,8 +61,9 @@ def send_slack_message(message):
 start_time = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
 
 # 주기적으로 데이터베이스 확인하기
+user_id = fetch_user_id()
 database = fetch_database()
-changes = check_for_changes(start_time, database)
+changes = check_for_changes(start_time, database, user_id)
 
 if changes:
     message = format_changes(changes)
