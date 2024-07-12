@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주간업무시간 요약</title>
+    <title>주간 업무 요약</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -133,21 +133,16 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 로컬 스토리지에서 데이터 가져오기
             var weeklyTotal = localStorage.getItem('weeklyTotal') || '0시간 0분';
             var totals = JSON.parse(localStorage.getItem('totals')) || {};
             var dailyTotals = JSON.parse(localStorage.getItem('dailyTotals')) || {};
 
-            // 주간 총합 표시
             document.getElementById('weekly-totals').innerText = '총합: ' + weeklyTotal;
-            
-            // 카테고리별 총합 표시
-            document.getElementById('j-totals').innerText = totals['이재준'] ? totals['이재준'] : '0시간 0분';
-            document.getElementById('d-totals').innerText = totals['박동재'] ? totals['박동재'] : '0시간 0분';
-            document.getElementById('s-totals').innerText = totals['박상준'] ? totals['박상준'] : '0시간 0분';
-            document.getElementById('r-totals').innerText = totals['최람'] ? totals['최람'] : '0시간 0분';
+            document.getElementById('j-totals').innerText = totals['이재준'] ? formatHours(totals['이재준']) : '0시간 0분';
+            document.getElementById('d-totals').innerText = totals['박동재'] ? formatHours(totals['박동재']) : '0시간 0분';
+            document.getElementById('s-totals').innerText = totals['박상준'] ? formatHours(totals['박상준']) : '0시간 0분';
+            document.getElementById('r-totals').innerText = totals['최람'] ? formatHours(totals['최람']) : '0시간 0분';
 
-            // 요일별 총합 표시
             var days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             days.forEach((day, index) => {
                 document.getElementById(`daily-j-${day}`).innerText = dailyTotals['이재준'] ? formatHours(dailyTotals['이재준'][index]) : '0시간 0분';
