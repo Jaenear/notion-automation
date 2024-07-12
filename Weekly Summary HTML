@@ -150,12 +150,18 @@
             // 요일별 총합 표시
             var days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             days.forEach((day, index) => {
-                document.getElementById(`daily-j-${day}`).innerText = dailyTotals['이재준'] ? dailyTotals['이재준'][index] : '0시간 0분';
-                document.getElementById(`daily-d-${day}`).innerText = dailyTotals['박동재'] ? dailyTotals['박동재'][index] : '0시간 0분';
-                document.getElementById(`daily-s-${day}`).innerText = dailyTotals['박상준'] ? dailyTotals['박상준'][index] : '0시간 0분';
-                document.getElementById(`daily-r-${day}`).innerText = dailyTotals['최람'] ? dailyTotals['최람'][index] : '0시간 0분';
+                document.getElementById(`daily-j-${day}`).innerText = dailyTotals['이재준'] ? formatHours(dailyTotals['이재준'][index]) : '0시간 0분';
+                document.getElementById(`daily-d-${day}`).innerText = dailyTotals['박동재'] ? formatHours(dailyTotals['박동재'][index]) : '0시간 0분';
+                document.getElementById(`daily-s-${day}`).innerText = dailyTotals['박상준'] ? formatHours(dailyTotals['박상준'][index]) : '0시간 0분';
+                document.getElementById(`daily-r-${day}`).innerText = dailyTotals['최람'] ? formatHours(dailyTotals['최람'][index]) : '0시간 0분';
             });
         });
+
+        var formatHours = function(hours) {
+            var h = Math.floor(hours);
+            var m = Math.round((hours - h) * 60);
+            return h + '시간 ' + (m > 0 ? m + '분' : '');
+        };
     </script>
 </body>
 </html>
