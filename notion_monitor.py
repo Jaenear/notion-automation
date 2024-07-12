@@ -35,6 +35,6 @@ for user_id in last_edited_by_ids:
     except Exception as e:
         user_info_list.append({'user_id': user_id, 'error': str(e)})
 
-import ace_tools as tools; tools.display_dataframe_to_user(name="User Information", dataframe=pd.DataFrame(user_info_list))
-
-user_info_list
+# 사용자 정보 출력
+for info in user_info_list:
+    print(info)
