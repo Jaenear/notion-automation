@@ -1,54 +1,61 @@
 import requests
-import pandas as pd
-from collections import Counter
+import os
+from datetime import datetime, timezone, timedelta
 
-# 노션 API 키와 데이터베이스 ID 설정
-NOTION_API_KEY = "your_notion_api_key"
-DATABASE_ID = "your_database_id"
-NOTION_VERSION = "2021-08-16"
+# 환경 변수에서 설정 값들 가져오기
+NOTION_API_KEY = os.getenv("NOTION_API_KEY")
+DATABASE_ID = os.getenv("DATABASE_ID")
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 
 headers = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
-    "Notion-Version": NOTION_VERSION,
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Notion-Version": "2022-06-28"
 }
 
-def fetch_users_in_database(database_id):
-    url = f"https://api.notion.com/v1/databases/{database_id}/query"
+# 노션 데이터베이스에서 데이터 가져오기
+def fetch_database():
+    url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     response = requests.post(url, headers=headers)
     response.raise_for_status()
     return response.json()
 
-def extract_user_ids(pages):
-    user_ids = []
-    for page in pages:
-        if "properties" in page:
-            for prop in page["properties"].values():
-                if prop["type"] == "people":
-                    user_ids.extend([person["id"] for person in prop["people"]])
-    return user_ids
+# 변경 사항 확인하기
+def check_for_changes(start_time, database):
+    changes = []
+    for item in database['results']:
+        last_edited_time = item['last_edited_time']
+        if last_edited_time > start_time:
+            changes.append(item)
+    return changes
 
-def extract_last_edited_by_ids(pages):
-    last_edited_by_ids = [page["last_edited_by"]["id"] for page in pages if "last_edited_by" in page]
-    return last_edited_by_ids
+# 변경 사항 포맷팅하기
+def format_changes(changes):
+    formatted_message = "Changes detected:\n"
+    for change in changes:
+        title = change['properties']['이름']['title'][0]['plain_text']
+        url = change['url']
+        last_edited_time = datetime.fromisoformat(change['last_edited_time'].replace("Z", "+00:00"))
+        last_edited_time_kst = last_edited_time + timedelta(hours=9)  # UTC+9
+        last_edited_time_kst_str = last_edited_time_kst.strftime('%Y-%m-%d %H:%M:%S')
+        formatted_message += f"- [{title}]({url}) at {last_edited_time_kst_str} (KST)\n"
+    return formatted_message
 
-# 데이터베이스에서 페이지들 가져오기
-database_data = fetch_users_in_database(DATABASE_ID)
-pages = database_data["results"]
+# 슬랙으로 알림 보내기
+def send_slack_message(message):
+    payload = {
+        "text": message
+    }
+    response = requests.post(SLACK_WEBHOOK_URL, json=payload)
+    response.raise_for_status()
 
-# 사용자 ID 추출
-user_ids = extract_user_ids(pages)
-last_edited_by_ids = extract_last_edited_by_ids(pages)
+# 현재 시간 기준으로 10분 전 시간 계산
+start_time = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
 
-# 사용자 ID 빈도수 계산
-user_id_counts = Counter(user_ids)
-last_edited_by_id_counts = Counter(last_edited_by_ids)
+# 주기적으로 데이터베이스 확인하기
+database = fetch_database()
+changes = check_for_changes(start_time, database)
 
-# 데이터프레임 생성 및 저장
-user_id_df = pd.DataFrame(user_id_counts.items(), columns=["User ID", "Count"])
-last_edited_by_df = pd.DataFrame(last_edited_by_id_counts.items(), columns=["Last Edited By ID", "Count"])
-
-user_id_df.to_csv("user_ids.csv", index=False)
-last_edited_by_df.to_csv("last_edited_by_ids.csv", index=False)
-
-print("User ID extraction complete. Check user_ids.csv and last_edited_by_ids.csv for results.")
+if changes:
+    message = format_changes(changes)
+    send_slack_message(message)
