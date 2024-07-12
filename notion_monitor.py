@@ -18,7 +18,14 @@ def fetch_database():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     response = requests.post(url, headers=headers)
     response.raise_for_status()
-    return response.json()
+    return response.json(), response.request.url
+
+# 사용자 정보 가져오기
+def fetch_user(user_id):
+    url = f"https://api.notion.com/v1/users/{user_id}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json(), response.request.url
 
 # 변경 사항 확인하기
 def check_for_changes(start_time, database):
@@ -38,13 +45,19 @@ def format_changes(changes):
         last_edited_time = datetime.fromisoformat(change['last_edited_time'].replace("Z", "+00:00"))
         last_edited_time_kst = last_edited_time + timedelta(hours=9)  # UTC+9
         last_edited_time_kst_str = last_edited_time_kst.strftime('%Y-%m-%d %H:%M:%S')
-        formatted_message += f"- [{title}]({url}) at {last_edited_time_kst_str} (KST)\n"
+
+        user_id = change['last_edited_by']['id']
+        user_data, user_api = fetch_user(user_id)
+        user_name = user_data['name']
+
+        formatted_message += f"- [{title}]({url}) at {last_edited_time_kst_str} (KST) by {user_name} (User ID: {user_id})\n"
+
     return formatted_message
 
 # 슬랙으로 알림 보내기
-def send_slack_message(message):
+def send_slack_message(message, api_info):
     payload = {
-        "text": message
+        "text": f"{message}\n\nAPI Information:\n{api_info}"
     }
     response = requests.post(SLACK_WEBHOOK_URL, json=payload)
     response.raise_for_status()
@@ -53,9 +66,14 @@ def send_slack_message(message):
 start_time = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
 
 # 주기적으로 데이터베이스 확인하기
-database = fetch_database()
-changes = check_for_changes(start_time, database)
+database_data, db_api = fetch_database()
+changes = check_for_changes(start_time, database_data)
 
 if changes:
     message = format_changes(changes)
-    send_slack_message(message)
+    api_info = f"Database API: {db_api}\n"
+    for change in changes:
+        user_id = change['last_edited_by']['id']
+        user_data, user_api = fetch_user(user_id)
+        api_info += f"User API for {user_data['name']} (User ID: {user_id}): {user_api}\n"
+    send_slack_message(message, api_info)
