@@ -2,7 +2,7 @@ name: Monitor Notion Database
 
 on:
   schedule:
-    - cron: "*/6 * * * *"  # 매 6분마다 실행
+    - cron: "*/10 * * * *"  # 매 10분마다 실행
   workflow_dispatch:
 
 jobs:
@@ -19,11 +19,21 @@ jobs:
           python-version: 3.x
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests pandas
 
       - name: Run Notion monitor script
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          DATABASE_ID: ${{ secrets.DATABASE_ID }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python notion_monitor.py
+
+      - name: Upload last_edited_by_ids.csv
+        uses: actions/upload-artifact@v2
+        with:
+          name: last_edited_by_ids
+          path: last_edited_by_ids.csv
+
+      - name: Upload user_ids.csv
+        uses: actions/upload-artifact@v2
+        with:
+          name: user_ids
+          path: user_ids.csv
